@@ -75,3 +75,10 @@ function resetLadder() {
     updateLadder();
   }
 }
+
+// Expose functions to global scope for HTML onclick
+window.addPlayer = addPlayer;
+window.removePlayer = removePlayer;
+window.moveUp = moveUp;
+window.moveDown = moveDown;
+window.resetLadder = resetLadder;
