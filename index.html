@@ -1,200 +1,327 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Ladder Tournament</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Fixed Firebase SDK imports - using modular v9+ syntax -->
-  <script type="module">
-    // Import the functions you need from the SDKs you need
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getDatabase, ref, set, onValue } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
-
-    // Your web app's Firebase configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyCTfDaYZ5e7frfkVQpnJS460a5_xOI2cwA",
-      authDomain: "spm-ladder.firebaseapp.com",
-      projectId: "spm-ladder",
-      storageBucket: "spm-ladder.firebasestorage.app",
-      messagingSenderId: "164520026060",
-      appId: "1:164520026060:web:a68ce945f128bec4b38769"
-    };
-
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const ladderRef = ref(db, "ladder");
-
-    // Get DOM elements
-    const ladderEl = document.getElementById("ladder");
-    const playerInput = document.getElementById("playerInput");
-    const addButton = document.getElementById("addButton");
-    const resetButton = document.getElementById("resetButton");
-
-    let currentLadder = [];
-
-    // Render ladder list
-    function renderLadder(players) {
-      ladderEl.innerHTML = "";
-      players.forEach((player, index) => {
-        const li = document.createElement("li");
-        li.className = "flex justify-between items-center bg-gray-100 px-4 py-2 rounded";
-        li.innerHTML = `
-          <span class="font-medium">${index + 1}. ${player}</span>
-          <div class="space-x-2">
-            ${index > 0 ? `<button class="text-blue-600 hover:text-blue-800 font-bold" onclick="moveUp(${index})">↑</button>` : ""}
-            ${index < players.length - 1 ? `<button class="text-blue-600 hover:text-blue-800 font-bold" onclick="moveDown(${index})">↓</button>` : ""}
-            <button class="text-red-600 hover:text-red-800 font-bold" onclick="removePlayer(${index})">✖</button>
-          </div>
-        `;
-        ladderEl.appendChild(li);
-      });
-    }
-
-    // Add a new player
-    function addPlayer() {
-      const name = playerInput.value.trim();
-      if (name && !currentLadder.includes(name)) {
-        currentLadder.push(name);
-        playerInput.value = "";
-        updateLadder();
-      } else if (currentLadder.includes(name)) {
-        alert("Player already exists in the ladder!");
-      }
-    }
-
-    // Remove a player
-    function removePlayer(index) {
-      if (confirm(`Remove ${currentLadder[index]} from the ladder?`)) {
-        currentLadder.splice(index, 1);
-        updateLadder();
-      }
-    }
-
-    // Move player up
-    function moveUp(index) {
-      if (index > 0) {
-        [currentLadder[index - 1], currentLadder[index]] = [currentLadder[index], currentLadder[index - 1]];
-        updateLadder();
-      }
-    }
-
-    // Move player down
-    function moveDown(index) {
-      if (index < currentLadder.length - 1) {
-        [currentLadder[index + 1], currentLadder[index]] = [currentLadder[index], currentLadder[index + 1]];
-        updateLadder();
-      }
-    }
-
-    // Reset ladder
-    function resetLadder() {
-      if (confirm("Are you sure you want to reset the ladder?")) {
-        currentLadder = [];
-        updateLadder();
-      }
-    }
-
-    // Push updated ladder to Firebase
-    function updateLadder() {
-      set(ladderRef, currentLadder).catch((error) => {
-        console.error("Error updating ladder:", error);
-        alert("Failed to update ladder. Please try again.");
-      });
-    }
-
-    // Sync ladder from Firebase
-    onValue(ladderRef, (snapshot) => {
-      currentLadder = snapshot.val() || [];
-      renderLadder(currentLadder);
-    }, (error) => {
-      console.error("Error reading from Firebase:", error);
-    });
-
-    // Hook up event listeners
-    addButton.addEventListener("click", addPlayer);
-    resetButton.addEventListener("click", resetLadder);
-    
-    // Allow Enter key to add player
-    playerInput.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        addPlayer();
-      }
-    });
-
-    // Expose functions to global scope for onclick handlers
-    window.moveUp = moveUp;
-    window.moveDown = moveDown;
-    window.removePlayer = removePlayer;
-  </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ladder Tournament</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase v9 compat for easier migration -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-compat-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-compat-database.js"></script>
 </head>
-<body class="bg-gray-100 min-h-screen p-6">
-  <div class="max-w-xl mx-auto bg-white shadow-lg rounded-lg p-6">
-    <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">🏆 Ladder Tournament</h1>
-    
-    <div class="flex gap-2 mb-6">
-      <input 
-        id="playerInput" 
-        type="text" 
-        placeholder="Enter player name" 
-        class="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
-      />
-      <button 
-        id="addButton" 
-        class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-      >
-        Add Player
-      </button>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-2xl overflow-hidden">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
+                <h1 class="text-3xl font-bold text-center">🏆 Ladder Tournament</h1>
+                <p class="text-center mt-2 opacity-90">Manage your tournament rankings</p>
+            </div>
+
+            <!-- Add Player Section -->
+            <div class="p-6 bg-gray-50 border-b">
+                <div class="flex gap-3">
+                    <input 
+                        type="text" 
+                        id="playerName" 
+                        placeholder="Enter player name..." 
+                        class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        maxlength="30"
+                    >
+                    <button 
+                        id="addPlayerBtn" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105"
+                    >
+                        Add Player
+                    </button>
+                </div>
+                <div class="mt-2 text-sm text-gray-600">
+                    <span id="playerCount">0</span> players • Press Enter to add quickly
+                </div>
+            </div>
+
+            <!-- Ladder Section -->
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-gray-800">Current Ladder</h2>
+                    <button 
+                        id="resetBtn" 
+                        class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                        Reset All
+                    </button>
+                </div>
+
+                <!-- Ladder List -->
+                <div id="ladderContainer" class="space-y-2">
+                    <!-- Players will be rendered here -->
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="text-center py-12 text-gray-500">
+                    <div class="text-6xl mb-4">🎯</div>
+                    <h3 class="text-lg font-medium mb-2">No Players Yet</h3>
+                    <p class="text-sm">Add your first player to start the tournament!</p>
+                </div>
+
+                <!-- Loading State -->
+                <div id="loadingState" class="text-center py-12 text-gray-500">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+                    <p>Connecting to database...</p>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="bg-gray-50 px-6 py-4 text-center text-sm text-gray-600 border-t">
+                <p>📱 Real-time sync across all devices • 🔄 Changes saved automatically</p>
+            </div>
+        </div>
     </div>
 
-    <div id="ladderContainer" class="mb-6">
-      <h2 class="text-lg font-semibold mb-3 text-gray-700">Current Ladder</h2>
-      <ul id="ladder" class="space-y-2 min-h-[100px]">
-        <!-- Players will be rendered here -->
-      </ul>
-      <div id="emptyState" class="text-center text-gray-500 py-8" style="display: none;">
-        No players in the ladder yet. Add some players to get started!
-      </div>
-    </div>
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCTfDaYZ5e7frfkVQpnJS460a5_xOI2cwA",
+            authDomain: "spm-ladder.firebaseapp.com",
+            databaseURL: "https://spm-ladder-default-rtdb.firebaseio.com/",
+            projectId: "spm-ladder",
+            storageBucket: "spm-ladder.firebasestorage.app",
+            messagingSenderId: "164520026060",
+            appId: "1:164520026060:web:a68ce945f128bec4b38769"
+        };
 
-    <div class="text-center">
-      <button 
-        id="resetButton" 
-        class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-      >
-        🔄 Reset Ladder
-      </button>
-    </div>
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const ladderRef = database.ref('ladder');
 
-    <div class="mt-6 text-sm text-gray-600 text-center">
-      <p>• Use ↑↓ buttons to move players up/down the ladder</p>
-      <p>• Press Enter in the input field to quickly add players</p>
-      <p>• Changes sync automatically across all devices</p>
-    </div>
-  </div>
+        // DOM Elements
+        const playerNameInput = document.getElementById('playerName');
+        const addPlayerBtn = document.getElementById('addPlayerBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const ladderContainer = document.getElementById('ladderContainer');
+        const emptyState = document.getElementById('emptyState');
+        const loadingState = document.getElementById('loadingState');
+        const playerCount = document.getElementById('playerCount');
 
-  <script>
-    // Show/hide empty state based on ladder content
-    function updateEmptyState() {
-      const ladder = document.getElementById("ladder");
-      const emptyState = document.getElementById("emptyState");
-      
-      if (ladder.children.length === 0) {
-        emptyState.style.display = "block";
-      } else {
-        emptyState.style.display = "none";
-      }
-    }
+        // State
+        let currentLadder = [];
+        let isLoading = true;
 
-    // Override the original renderLadder to include empty state handling
-    const originalRender = window.renderLadder;
-    window.renderLadder = function(players) {
-      if (originalRender) {
-        originalRender(players);
-      }
-      updateEmptyState();
-    };
-  </script>
+        // Show loading initially
+        showLoading();
+
+        // Render ladder
+        function renderLadder(players) {
+            ladderContainer.innerHTML = '';
+            
+            if (!players || players.length === 0) {
+                showEmptyState();
+                return;
+            }
+
+            hideEmptyState();
+            hideLoading();
+
+            players.forEach((player, index) => {
+                const playerElement = document.createElement('div');
+                playerElement.className = 'flex items-center justify-between bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow';
+                
+                playerElement.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                            ${index + 1}
+                        </div>
+                        <span class="font-medium text-gray-800">${escapeHtml(player)}</span>
+                        ${index === 0 ? '<span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-medium">👑 Leader</span>' : ''}
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        ${index > 0 ? `<button onclick="movePlayerUp(${index})" class="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-colors" title="Move up">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                            </svg>
+                        </button>` : ''}
+                        ${index < players.length - 1 ? `<button onclick="movePlayerDown(${index})" class="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-colors" title="Move down">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>` : ''}
+                        <button onclick="removePlayer(${index})" class="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-full transition-colors" title="Remove player">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                
+                ladderContainer.appendChild(playerElement);
+            });
+
+            updatePlayerCount(players.length);
+        }
+
+        // Utility functions
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showEmptyState() {
+            emptyState.style.display = 'block';
+            updatePlayerCount(0);
+        }
+
+        function hideEmptyState() {
+            emptyState.style.display = 'none';
+        }
+
+        function showLoading() {
+            loadingState.style.display = 'block';
+            emptyState.style.display = 'none';
+        }
+
+        function hideLoading() {
+            loadingState.style.display = 'none';
+        }
+
+        function updatePlayerCount(count) {
+            playerCount.textContent = count;
+        }
+
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white font-medium shadow-lg z-50 transform translate-x-full transition-transform duration-300 ${
+                type === 'error' ? 'bg-red-500' : type === 'success' ? 'bg-green-500' : 'bg-blue-500'
+            }`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            // Slide in
+            setTimeout(() => {
+                notification.style.transform = 'translateX(0)';
+            }, 100);
+            
+            // Slide out and remove
+            setTimeout(() => {
+                notification.style.transform = 'translateX(full)';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        // Player management functions
+        function addPlayer() {
+            const name = playerNameInput.value.trim();
+            
+            if (!name) {
+                showNotification('Please enter a player name', 'error');
+                return;
+            }
+
+            if (name.length > 30) {
+                showNotification('Player name is too long', 'error');
+                return;
+            }
+
+            if (currentLadder.includes(name)) {
+                showNotification('Player already exists in the ladder', 'error');
+                return;
+            }
+
+            currentLadder.push(name);
+            playerNameInput.value = '';
+            updateFirebase();
+            showNotification(`${name} added to the ladder!`, 'success');
+        }
+
+        function removePlayer(index) {
+            if (index < 0 || index >= currentLadder.length) return;
+            
+            const playerName = currentLadder[index];
+            if (confirm(`Remove "${playerName}" from the ladder?`)) {
+                currentLadder.splice(index, 1);
+                updateFirebase();
+                showNotification(`${playerName} removed from the ladder`, 'info');
+            }
+        }
+
+        function movePlayerUp(index) {
+            if (index <= 0 || index >= currentLadder.length) return;
+            
+            const temp = currentLadder[index];
+            currentLadder[index] = currentLadder[index - 1];
+            currentLadder[index - 1] = temp;
+            updateFirebase();
+            showNotification(`${temp} moved up!`, 'success');
+        }
+
+        function movePlayerDown(index) {
+            if (index < 0 || index >= currentLadder.length - 1) return;
+            
+            const temp = currentLadder[index];
+            currentLadder[index] = currentLadder[index + 1];
+            currentLadder[index + 1] = temp;
+            updateFirebase();
+            showNotification(`${temp} moved down!`, 'info');
+        }
+
+        function resetLadder() {
+            if (currentLadder.length === 0) {
+                showNotification('Ladder is already empty', 'info');
+                return;
+            }
+            
+            if (confirm('Are you sure you want to reset the entire ladder? This cannot be undone.')) {
+                currentLadder = [];
+                updateFirebase();
+                showNotification('Ladder reset successfully', 'success');
+            }
+        }
+
+        // Firebase functions
+        function updateFirebase() {
+            ladderRef.set(currentLadder).catch(error => {
+                console.error('Firebase error:', error);
+                showNotification('Failed to save changes. Please try again.', 'error');
+            });
+        }
+
+        // Firebase listener
+        ladderRef.on('value', (snapshot) => {
+            isLoading = false;
+            const data = snapshot.val();
+            currentLadder = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
+            renderLadder(currentLadder);
+        }, (error) => {
+            isLoading = false;
+            console.error('Firebase read error:', error);
+            hideLoading();
+            showNotification('Failed to connect to database', 'error');
+        });
+
+        // Event listeners
+        addPlayerBtn.addEventListener('click', addPlayer);
+        resetBtn.addEventListener('click', resetLadder);
+
+        playerNameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addPlayer();
+            }
+        });
+
+        // Focus on input when page loads
+        window.addEventListener('load', () => {
+            playerNameInput.focus();
+        });
+
+        // Make functions globally accessible for onclick handlers
+        window.movePlayerUp = movePlayerUp;
+        window.movePlayerDown = movePlayerDown;
+        window.removePlayer = removePlayer;
+    </script>
 </body>
 </html>
