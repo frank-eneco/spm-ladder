@@ -1,12 +1,11 @@
-// Firebase config (replace with your own from Firebase Console)
+// Firebase config (replace with your own from Firebase Console)// Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "your-app.firebaseapp.com",
-  databaseURL: "https://your-app.firebaseio.com",
-  projectId: "your-app",
-  storageBucket: "your-app.appspot.com",
-  messagingSenderId: "your-id",
-  appId: "your-app-id"
+  apiKey: "AIzaSyCTfDaYZ5e7frfkVQpnJS460a5_xOI2cwA",
+  authDomain: "spm-ladder.firebaseapp.com",
+  projectId: "spm-ladder",
+  storageBucket: "spm-ladder.firebasestorage.app",
+  messagingSenderId: "164520026060",
+  appId: "1:164520026060:web:a68ce945f128bec4b38769"
 };
 
 // Initialize
