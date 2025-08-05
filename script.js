@@ -1,3 +1,4 @@
+// Replace with your actual Firebase config
 // Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyCTfDaYZ5e7frfkVQpnJS460a5_xOI2cwA",
@@ -19,30 +20,27 @@ const resetButton = document.getElementById("resetButton");
 
 let currentLadder = [];
 
-// Render the ladder UI
+// Render ladder list
 function renderLadder(players) {
   ladderEl.innerHTML = "";
   players.forEach((player, index) => {
     const li = document.createElement("li");
     li.className = "flex justify-between items-center bg-gray-100 px-4 py-2 rounded";
+
     li.innerHTML = `
       <span>${index + 1}. ${player}</span>
       <div class="space-x-2">
-        ${index > 0 ? `<button onclick="moveUp(${index})" class="text-blue-600">↑</button>` : ""}
-        ${index < players.length - 1 ? `<button onclick="moveDown(${index})" class="text-blue-600">↓</button>` : ""}
-        <button onclick="removePlayer(${index})" class="text-red-600">✖</button>
+        ${index > 0 ? `<button class="text-blue-600" onclick="moveUp(${index})">↑</button>` : ""}
+        ${index < players.length - 1 ? `<button class="text-blue-600" onclick="moveDown(${index})">↓</button>` : ""}
+        <button class="text-red-600" onclick="removePlayer(${index})">✖</button>
       </div>
     `;
+
     ladderEl.appendChild(li);
   });
 }
 
-// Push the ladder to Firebase
-function updateLadder() {
-  ladderRef.set(currentLadder);
-}
-
-// Actions
+// Add a new player
 function addPlayer() {
   const name = playerInput.value.trim();
   if (name) {
@@ -52,26 +50,35 @@ function addPlayer() {
   }
 }
 
+// Remove a player
 function removePlayer(index) {
   currentLadder.splice(index, 1);
   updateLadder();
 }
 
+// Move player up
 function moveUp(index) {
   [currentLadder[index - 1], currentLadder[index]] = [currentLadder[index], currentLadder[index - 1]];
   updateLadder();
 }
 
+// Move player down
 function moveDown(index) {
-  [currentLadder[index], currentLadder[index + 1]] = [currentLadder[index + 1], currentLadder[index]];
+  [currentLadder[index + 1], currentLadder[index]] = [currentLadder[index], currentLadder[index + 1]];
   updateLadder();
 }
 
+// Reset ladder
 function resetLadder() {
   if (confirm("Are you sure you want to reset the ladder?")) {
     currentLadder = [];
     updateLadder();
   }
+}
+
+// Push updated ladder to Firebase
+function updateLadder() {
+  ladderRef.set(currentLadder);
 }
 
 // Sync ladder from Firebase
@@ -80,11 +87,11 @@ ladderRef.on("value", (snapshot) => {
   renderLadder(currentLadder);
 });
 
-// Button event listeners
+// Hook up buttons
 addButton.addEventListener("click", addPlayer);
 resetButton.addEventListener("click", resetLadder);
 
-// Expose for inline handlers
+// Expose to HTML for inline onclick handlers
 window.moveUp = moveUp;
 window.moveDown = moveDown;
 window.removePlayer = removePlayer;
